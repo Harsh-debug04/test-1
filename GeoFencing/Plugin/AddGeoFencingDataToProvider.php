@@ -33,20 +33,38 @@ class AddGeoFencingDataToProvider
     {
         $apiKey = $this->helper->getGoogleApiKey();
         if (empty($apiKey)) {
-            return $result; // Do nothing if the API key isn't configured.
+            return $result;
         }
 
-        // For existing products, the key is the product ID. For new products, it's often empty.
-        $key = $subject->getCurrentProduct() ? $subject->getCurrentProduct()->getId() : '';
+        $product = $subject->getCurrentProduct();
+        $key = $product ? $product->getId() : null;
 
+        // If key is null, it's a new product. The data provider uses an empty string for the key.
+        if ($key === null) {
+            $key = '';
+        }
+
+        // This logic handles both existing products (keyed by ID) and new products (keyed by '').
         if (isset($result[$key])) {
-             $result[$key]['geofencing']['apiKey'] = $apiKey;
+            // Ensure the 'product' sub-array exists before trying to modify it.
+            if (!isset($result[$key]['product']) || !is_array($result[$key]['product'])) {
+                $result[$key]['product'] = [];
+            }
+            $result[$key]['product']['geofencing']['apiKey'] = $apiKey;
         } elseif (!empty($result) && is_array($result)) {
-             // Fallback for new products: inject the API key into the first available data set.
-             $firstProductKey = array_key_first($result);
-             if ($firstProductKey !== null) {
-                $result[$firstProductKey]['geofencing']['apiKey'] = $apiKey;
-             }
+            // Fallback for cases where the result is not keyed by product ID.
+            // This might happen with complex product types or customizations.
+            $firstProductKey = array_key_first($result);
+            if ($firstProductKey !== null) {
+                if (!isset($result[$firstProductKey]['product']) || !is_array($result[$firstProductKey]['product'])) {
+                    $result[$firstProductKey]['product'] = [];
+                }
+                $result[$firstProductKey]['product']['geofencing']['apiKey'] = $apiKey;
+            }
+        } else {
+            // This handles the edge case where the result is empty for a new product form.
+            // We create the necessary structure.
+            $result[$key]['product']['geofencing']['apiKey'] = $apiKey;
         }
 
         return $result;
