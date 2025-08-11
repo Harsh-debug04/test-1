@@ -36,13 +36,11 @@ class AddGeoFencingDataToProvider
             return $result;
         }
 
-        $product = $subject->getCurrentProduct();
-        $key = $product ? $product->getId() : null;
-
-        // If key is null, it's a new product. The data provider uses an empty string for the key.
-        if ($key === null) {
-            $key = '';
+        if (empty($result)) {
+            return $result;
         }
+        // The key of the result array is the product ID for existing products, or an empty string for new products.
+        $key = array_key_first($result);
 
         // This logic handles both existing products (keyed by ID) and new products (keyed by '').
         if (isset($result[$key])) {
