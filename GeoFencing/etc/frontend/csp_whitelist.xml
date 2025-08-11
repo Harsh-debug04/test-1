@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Csp:etc/csp_whitelist.xsd">
+    <policies>
+        <policy id="script-src">
+            <values>
+                <value id="google-maps" type="host">maps.googleapis.com</value>
+            </values>
+        </policy>
+        <policy id="frame-src">
+            <values>
+                <value id="google-maps" type="host">www.google.com</value>
+            </values>
+        </policy>
+    </policies>
+</config>

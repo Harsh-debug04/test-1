@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <referenceBlock name="product_form">
+            <arguments>
+                <argument name="js_config" xsi:type="array">
+                    <item name="components" xsi:type="array">
+                        <item name="geo-location-js" xsi:type="array">
+                            <item name="component" xsi:type="string">AgriCart_GeoFencing/js/geolocation</item>
+                            <!--
+                            This is the corrected part.
+                            It links the 'apiKey' config option in the JS component
+                            to the data provided by our plugin. The data provider adds
+                            'geofencing.apiKey' to the product data array.
+                            -->
+                            <item name="config" xsi:type="array">
+                                <item name="apiKey" xsi:type="string" template="data.product.geofencing.apiKey"/>
+                            </item>
+                        </item>
+                    </item>
+                </argument>
+            </arguments>
+        </referenceBlock>
+    </body>
+</page>

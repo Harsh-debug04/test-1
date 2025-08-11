@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <!--
+    This registers the plugin for the adminhtml area.
+    It targets the ProductDataProvider class.
+    -->
+    <type name="Magento\Catalog\Ui\DataProvider\Product\Form\ProductDataProvider">
+        <plugin name="agricart_geofencing_add_api_key_to_provider"
+                type="AgriCart\GeoFencing\Plugin\Product\AddGeoFencingDataToProvider"
+                sortOrder="10"
+                disabled="false"/>
+    </type>
+</config>
