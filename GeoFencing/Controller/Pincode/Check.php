@@ -7,9 +7,7 @@ use Magento\Framework\Controller\Result\JsonFactory;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Framework\App\RequestInterface;
 use AgriCart\GeoFencing\Helper\Data as GeoFencingHelper;
-use Magento\Framework\HTTP\Client\Curl;
 use Psr\Log\LoggerInterface;
-use Magento\Framework\Controller\ResultFactory;
 
 class Check extends Action
 {
@@ -17,7 +15,6 @@ class Check extends Action
     protected $productRepository;
     protected $request;
     protected $helper;
-    protected $curl;
     protected $logger;
 
     public function __construct(
@@ -26,14 +23,12 @@ class Check extends Action
         ProductRepositoryInterface $productRepository,
         RequestInterface $request,
         GeoFencingHelper $helper,
-        Curl $curl,
         LoggerInterface $logger
     ) {
         $this->resultJsonFactory = $resultJsonFactory;
         $this->productRepository = $productRepository;
         $this->request = $request;
         $this->helper = $helper;
-        $this->curl = $curl;
         $this->logger = $logger;
         parent::__construct($context);
     }
@@ -50,17 +45,23 @@ class Check extends Action
 
         try {
             $product = $this->productRepository->getById($productId);
+            $locationString = $product->getGeoLocation();
 
-            if (!$product->getGeofencingEnable() || !$product->getGeoLocation()) {
+            if (!$product->getGeofencingEnable() || !$locationString) {
                 return $result->setData(['success' => true, 'message' => 'Shipping available.']);
             }
 
-            $productLocation = $this->parseLocation($product->getGeoLocation());
+            $productLocation = $this->helper->parseLocation($locationString);
             if (!$productLocation) {
-                return $result->setData(['success' => false, 'message' => 'Could not determine product location.']);
+                $productLocation = $this->helper->getCoordinatesForLocation($locationString);
             }
 
-            $pincodeCoords = $this->getCoordinatesForPincode($pincode);
+            if (!$productLocation) {
+                $this->logger->warning('GeoFencing: Could not geocode product location.', ['location' => $locationString]);
+                return $result->setData(['success' => false, 'message' => 'Could not determine product location. Please check the configured location in the admin panel.']);
+            }
+
+            $pincodeCoords = $this->helper->getCoordinatesForLocation($pincode);
             if (!$pincodeCoords) {
                 return $result->setData(['success' => false, 'message' => 'Could not find location for the entered pincode.']);
             }
@@ -84,43 +85,6 @@ class Check extends Action
             $this->logger->critical('GeoFencing Pincode Check Error: ' . $e->getMessage());
             return $result->setData(['success' => false, 'message' => 'An error occurred while checking pincode.']);
         }
-    }
-
-    private function getCoordinatesForPincode($pincode)
-    {
-        $apiKey = $this->helper->getGoogleApiKey();
-        if (!$apiKey) {
-            return null;
-        }
-        $url = 'https://maps.googleapis.com/maps/api/geocode/json?address=' . urlencode($pincode) . '&key=' . $apiKey;
-
-        $this->curl->get($url);
-        $response = json_decode($this->curl->getBody(), true);
-
-        if (isset($response['results'][0]['geometry']['location'])) {
-            return $response['results'][0]['geometry']['location'];
-        }
-
-        return null;
-    }
-
-    private function parseLocation($locationString)
-    {
-        $matches = [];
-        if (preg_match('/\\(([^)]+)\\)$/', $locationString, $matches)) {
-            if (isset($matches[1])) {
-                $parts = explode(',', $matches[1]);
-                if (count($parts) === 2) {
-                    $lat = (float)trim($parts[0]);
-                    $lng = (float)trim($parts[1]);
-
-                    if ($lat != 0 && $lng != 0) {
-                        return ['lat' => $lat, 'lng' => $lng];
-                    }
-                }
-            }
-        }
-        return null;
     }
 
     private function getDistance($lat1, $lon1, $lat2, $lon2)

@@ -30,52 +30,40 @@ class Map implements ArgumentInterface
         $this->json = $json;
     }
 
-    /**
-     * Determines if the map should be displayed on the product page.
-     *
-     * @return bool
-     */
     public function isMapVisible()
     {
         $product = $this->getCurrentProduct();
         if (!$product || !$this->helper->isEnabled() || !$this->helper->isShowMap()) {
             return false;
         }
-        // Map is only visible if the product-specific toggle is "Yes" and a location is saved.
         return (bool)$product->getGeofencingEnable() && $product->getGeoLocation();
     }
 
-    /**
-     * Provides all necessary data for the map component as a JSON string.
-     *
-     * @return string
-     */
     public function getMapConfigJson()
     {
         $product = $this->getCurrentProduct();
+        $locationString = $product->getGeoLocation();
+
+        if ($locationString && !$this->helper->parseLocation($locationString)) {
+            $coords = $this->helper->getCoordinatesForLocation($locationString);
+            if ($coords) {
+                $locationString = sprintf('%s (%f, %f)', $locationString, $coords['lat'], $coords['lng']);
+            }
+        }
+
         $config = [
             'apiKey' => $this->helper->getGoogleApiKey(),
-            'location' => $product->getGeoLocation(),
+            'location' => $locationString,
             'radius' => (int)$this->helper->getFenceRadius()
         ];
         return $this->json->serialize($config);
     }
 
-    /**
-     * Retrieves the current product from the Magento registry.
-     *
-     * @return \Magento\Catalog\Model\Product|null
-     */
     private function getCurrentProduct()
     {
         return $this->registry->registry('current_product');
     }
 
-    /**
-     * Retrieves the current product's ID.
-     *
-     * @return int|null
-     */
     public function getProductId()
     {
         $product = $this->getCurrentProduct();
