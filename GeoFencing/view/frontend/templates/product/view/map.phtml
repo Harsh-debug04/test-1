@@ -7,15 +7,38 @@ $viewModel = $block->getViewModel();
 ?>
 
 <?php if ($viewModel->isMapVisible()): ?>
+<div id="geofencing-pincode-checker-wrapper" data-product-id="<?= /* @noEscape */ $viewModel->getProductId() ?>">
+    <div class="pincode-checker-wrapper" style="margin-top: 20px;">
+        <label for="pincode"><b>Check delivery availability:</b></label>
+        <input type="text" id="pincode" name="pincode" placeholder="Enter your pincode" style="margin-left: 5px;"/>
+        <button id="pincode-check-button" type="button" title="Check" class="action primary">Check</button>
+        <div id="pincode-check-result" style="margin-top: 10px;"></div>
+    </div>
+</div>
+
 <div class="geofencing-map-wrapper">
     <div id="geofencing-map-container" style="height: 400px; width: 100%; margin-top: 20px;"></div>
 </div>
 <!-- Use x-magento-init to reliably initialize the map component with data from the ViewModel -->
 <script type="text/x-magento-init">
-{
-    "#geofencing-map-container": {
-        "AgriCart_GeoFencing/js/map-view": <?= /* @noEscape */ $viewModel->getMapConfigJson() ?>
+    {
+        "#geofencing-map-container": {
+            "AgriCart_GeoFencing/js/map-view": <?= /* @noEscape */ $viewModel->getMapConfigJson() ?>
+        },
+        "#geofencing-pincode-checker-wrapper": {
+            "AgriCart_GeoFencing/js/pincode-checker": {
+                "checkUrl": "<?= $block->getUrl('geofencing/pincode/check') ?>"
+            }
+        }
     }
-}
+</script>
+<script>
+    require(['jquery'], function($) {
+        $(function() { // Shorthand for $(document).ready()
+            // Disable Add to Cart by default if geofencing is active for this product.
+            // It will be enabled upon a successful pincode check.
+            $('#product-addtocart-button').prop('disabled', true).addClass('disabled');
+        });
+    });
 </script>
 <?php endif; ?>
