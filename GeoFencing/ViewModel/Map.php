@@ -70,4 +70,15 @@ class Map implements ArgumentInterface
     {
         return $this->registry->registry('current_product');
     }
+
+    /**
+     * Retrieves the current product's ID.
+     *
+     * @return int|null
+     */
+    public function getProductId()
+    {
+        $product = $this->getCurrentProduct();
+        return $product ? $product->getId() : null;
+    }
 }
